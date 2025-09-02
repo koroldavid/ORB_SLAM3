@@ -1,0 +1,24 @@
+FROM ros:noetic
+
+RUN apt-get update && apt-get install -y \
+    python3-catkin-tools \
+    ros-noetic-tf2-geometry-msgs \
+    libyaml-cpp-dev \
+    python3-matplotlib \
+    python3-scipy \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /catkin_ws
+RUN catkin init
+RUN catkin config --extend /opt/ros/noetic
+RUN catkin config --cmake-args -DCMAKE_BUILD_TYPE=Release
+
+WORKDIR /catkin_ws/src
+RUN git clone https://github.com/ori-drs/allan_variance_ros.git
+
+WORKDIR /catkin_ws
+RUN catkin build -j$(nproc)
+
+SHELL ["/bin/bash", "-c"]
+CMD ["bash"]

@@ -82,18 +82,29 @@ cat > ~/autorun/start_slam.sh << 'EOF'
 
 CAMERA_TOPIC_NAME_LEFT="/left_camera/image_raw/compressed"
 CAMERA_TOPIC_NAME_RIGHT="/right_camera/image_raw/compressed"
-VOCABLUARY="//$HOME/ORB_SLAM3/Vocabulary/ORBvoc.txt"
-CAMERA_CALIBRATION="//$HOME/ORB_SLAM3/visual_stabilization/calibration/slam_rpi5_stereo_calibration.yaml"
+VOCABLUARY="/home/drones/ORB_SLAM3/Vocabulary/ORBvoc.txt"
+CAMERA_CALIBRATION="/home/drones/ORB_SLAM3/visual_stabilization/calibration/slam_rpi5_stereo_calibration.yaml"
+
+while true; do
+    if ros2 topic list | grep "/mavros"; then
+        echo "MAVROS topics are available."
+        ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 50, on_off: true}"
+        break
+    else
+        echo "Waiting for MAVROS topics to be available..."
+        sleep 1
+    fi
+done
 
 while true; do
     if ros2 topic list | grep "$CAMERA_TOPIC_NAME_LEFT" && ros2 topic list | grep "$CAMERA_TOPIC_NAME_RIGHT"; then
-        # ros2 param set /left_camera AfMode 2
-        # ros2 param set /right_camera AfMode 2
+       # ros2 param set /left_camera AfMode 2
+       # ros2 param set /right_camera AfMode 2
+        while true; do
+           sleep 1000
+        done
         # echo "Camera topics ready, starting SLAM..."
         # xvfb-run -a -s "-screen 0 1280x720x24" ros2 run drones_stabilization Stabilization $CAMERA_TOPIC_NAME_LEFT $CAMERA_TOPIC_NAME_RIGHT $VOCABLUARY $CAMERA_CALIBRATION
-        while true; do
-            sleep 100
-        done
         break
     else
         echo "Camera topics not ready, waiting..."

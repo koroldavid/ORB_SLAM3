@@ -98,7 +98,7 @@ OR with IMU:
 ```
 CAMERA_TOPIC_NAME_LEFT="/left_camera/image_raw/compressed"
 CAMERA_TOPIC_NAME_RIGHT="/right_camera/image_raw/compressed"
-IMU_TOPIC_NAME="/mavros/imu/data_raw"
+IMU_TOPIC_NAME="/mavros/imu/data"
 VOCABLUARY="//$HOME/ORB_SLAM3/Vocabulary/ORBvoc.txt"
 CAMERA_CALIBRATION="//$HOME/ORB_SLAM3/visual_stabilization/calibration/slam_rpi5_stereo_calibration.yaml"
 

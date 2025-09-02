@@ -14,9 +14,9 @@ ros2 run camera_ros camera_node --ros-args \
   -p camera_info_url:=file:///home/drones/ORB_SLAM3/visual_stabilization/calibration/left.yaml \
   -p width:=320 \
   -p height:=240 \
-  -r /camera/image_raw:=/stereo/left/image_raw \
+  -r /camera/image_raw:=/left_camera/image_raw \
   -r /camera/camera_info:=/stereo/left/camera_info \
-  -r /camera/image_raw/compressed:=/stereo/left/image_raw/compressed \
+  -r /camera/image_raw/compressed:=/left_camera/image_raw/compressed \
   -p FrameDurationLimits:="[32500,32500]"
 ```
 
@@ -78,7 +78,7 @@ ros2 launch mavros apm.launch fcu_url:=/dev/ttyACM0:921600
 3. Record only IMU for at least 4 hours in stale possition:
 
 ```
-ros2 bag record -o /home/drones/ORB_SLAM3/visual_stabilization/calibration/imu_noise_bag --topics /mavros/imu/data_raw
+ros2 bag record -o /home/drones/ORB_SLAM3/visual_stabilization/calibration/imu_noise_bag --topics /mavros/imu/data
 ```
 
 4. Conver it to ROS1 bag file
@@ -120,7 +120,7 @@ Now with `kalibr_imu.yaml` file we can calibrate distance matrix between camera 
 3. Record april grid using drone with IMU and left camera running as in [this youtube guidance](https://www.youtube.com/watch?app=desktop&v=puNXsnrYWTY&ab_channel=SimpleKernel).
 
 ```
-ros2 bag record -o /home/drones/ORB_SLAM3/visual_stabilization/calibration/april_bag --topics /stereo/left/image_raw /mavros/imu/data_raw
+ros2 bag record -o /home/drones/ORB_SLAM3/visual_stabilization/calibration/april_bag --topics /left_camera/image_raw /mavros/imu/data
 ```
 
 4. Conver it to ROS1 bag file
@@ -147,7 +147,7 @@ rosrun kalibr kalibr_calibrate_cameras \
     --bag /data/april_calib.bag \
     --target /data/april_6x6_A4.yaml \
     --models pinhole-radtan \
-    --topics /stereo/left/image_raw
+    --topics /left_camera/image_raw
 
 rosrun kalibr kalibr_calibrate_imu_camera \
     --bag /data/april_calib.bag \

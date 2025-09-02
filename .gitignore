@@ -96,15 +96,7 @@ visual_stabilization/*/build
 visual_stabilization/*/install
 visual_stabilization/*/log
 
+visual_stabilization/calibration/april_calib*
+visual_stabilization/calibration/imu_noise*
 visual_stabilization/calibration/april_bag/
-visual_stabilization/calibration/imu_noise_bag/
 visual_stabilization/calibration/allan_variance.csv
-visual_stabilization/calibration/april_calib-camchain-imucam.yaml
-visual_stabilization/calibration/april_calib-camchain.yaml
-visual_stabilization/calibration/april_calib-imu.yaml
-visual_stabilization/calibration/april_calib-report-cam.pdf
-visual_stabilization/calibration/april_calib-report-imucam.pdf
-visual_stabilization/calibration/april_calib-results-cam.txt
-visual_stabilization/calibration/april_calib-results-imucam.txt
-visual_stabilization/calibration/april_calib.bag
-visual_stabilization/calibration/imu_noise.bag

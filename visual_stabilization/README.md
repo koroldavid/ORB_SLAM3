@@ -106,6 +106,7 @@ ros2 run drones_stabilization Stabilization $CAMERA_TOPIC_NAME_LEFT $CAMERA_TOPI
 ```
 
 OR MONO USB:
+
 ```
 CAMERA_TOPIC_NAME="/image_raw/compressed"
 IMAGE_FORMAT="mono"

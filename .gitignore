@@ -95,3 +95,8 @@ borrar/*
 visual_stabilization/*/build
 visual_stabilization/*/install
 visual_stabilization/*/log
+
+visual_stabilization/calibration/april_calib*
+visual_stabilization/calibration/imu_noise*
+visual_stabilization/calibration/april_bag/
+visual_stabilization/calibration/allan_variance.csv

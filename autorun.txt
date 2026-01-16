@@ -1,0 +1,283 @@
+Ок, делаем **полную инструкцию шаг за шагом**, включая все команды и файлы, чтобы настроить автозапуск через tmux.
+
+---
+
+## 1️⃣ Установка tmux (если ещё не установлен)
+
+```bash
+sudo apt update
+sudo apt install tmux -y
+```
+
+---
+
+## 2️⃣ Создание скриптов запуска сервисов
+
+### 2.1 MAVROS
+
+**Файл:** `/home/drones/start_mavros.sh`
+
+**Команды для создания и редактирования:**
+
+```bash
+nano /home/drones/start_mavros.sh
+```
+
+**Содержимое:**
+
+```bash
+#!/bin/bash
+# Wait until /dev/ttyACM0 appears
+while [ ! -e /dev/ttyACM0 ]; do
+    echo "/dev/ttyACM0 not found, waiting..."
+    sleep 2
+done
+
+echo "Starting MAVROS..."
+
+# Launch MAVROS
+ros2 launch mavros apm.launch fcu_url:=/dev/ttyACM0:921600 fcu_protocol:="v2.0"
+
+# Set stream rate
+ros2 service call /mavros/set_stream_rate mavros_msgs/srv/StreamRate "{stream_id: 0, message_rate: 10, on_off: true}"
+```
+
+**Сделать исполняемым:**
+
+```bash
+chmod +x /home/drones/start_mavros.sh
+```
+
+---
+
+### 2.2 Левая камера
+
+**Файл:** `/home/drones/start_left_camera.sh`
+
+```bash
+nano /home/drones/start_left_camera.sh
+```
+
+**Содержимое:**
+
+```bash
+#!/bin/bash
+while true; do
+    if [ -e /dev/video0 ]; then
+        echo "Left camera found, starting..."
+ros2 run camera_ros camera_node --ros-args \
+  --remap __node:=left_camera \
+  -p camera:=0 \
+  -p camera_info_url:=file:///home/drones/ORB_SLAM3/visual_stabilization/calibration/left.yaml \
+  -p width:=320 \
+  -p height:=240 \
+  -r /camera/image_raw:=/stereo/left/image_raw \
+  -r /camera/camera_info:=/stereo/left/camera_info \
+  -r /camera/image_raw/compressed:=/stereo/left/image_raw/compressed \
+  -p FrameDurationLimits:="[32500,32500]"
+        break
+    else
+        echo "Left camera not found, retrying..."
+        sleep 2
+    fi
+done
+```
+
+**Сделать исполняемым:**
+
+```bash
+chmod +x /home/drones/start_left_camera.sh
+```
+
+---
+
+### 2.3 Правая камера
+
+**Файл:** `/home/drones/start_right_camera.sh`
+
+```bash
+nano /home/drones/start_right_camera.sh
+```
+
+**Содержимое:**
+
+```bash
+#!/bin/bash
+#!/bin/bash
+while true; do
+    if [ -e /dev/video1 ]; then
+        echo "Right camera found, starting..."
+ros2 run camera_ros camera_node --ros-args \
+  --remap __node:=right_camera \
+  -p camera:=1 \
+  -p camera_info_url:=file:///home/drones/ORB_SLAM3/visual_stabilization/calibration/right.yaml \
+  -p width:=320 \
+  -p height:=240 \
+  -r /camera/image_raw:=/stereo/right/image_raw \
+  -r /camera/camera_info:=/stereo/right/camera_info \
+  -r /camera/image_raw/compressed:=/stereo/right/image_raw/compressed \
+  -p FrameDurationLimits:="[32500,32500]"
+        break
+    else
+        echo "Right camera not found, retrying..."
+        sleep 2
+    fi
+done
+```
+
+**Сделать исполняемым:**
+
+```bash
+chmod +x /home/drones/start_right_camera.sh
+```
+
+---
+
+### 2.4 SLAM
+
+**Файл:** `/home/drones/start_slam.sh`
+
+```bash
+nano /home/drones/start_slam.sh
+```
+
+**Содержимое:**
+
+```bash
+#!/bin/bash
+
+CAMERA_TOPIC_NAME_LEFT="/left_camera/image_raw/compressed"
+CAMERA_TOPIC_NAME_RIGHT="/right_camera/image_raw/compressed"
+VOCABLUARY="/home/drones/ORB_SLAM3/Vocabulary/ORBvoc.txt"
+CAMERA_CALIBRATION="/home/drones/ORB_SLAM3/visual_stabilization/calibration/slam_rpi5_stereo_calibration.yaml"
+
+while true; do
+    if ros2 topic list | grep -q "$CAMERA_TOPIC_NAME_LEFT" && ros2 topic list | grep -q "$CAMERA_TOPIC_NAME_RIGHT"; then
+        ros2 param set /left_camera AfMode 2
+        ros2 param set /right_camera AfMode 2
+        while true; do
+            sleep 1000
+        done
+        # echo "Camera topics ready, starting SLAM..."
+        # xvfb-run -a -s "-screen 0 1280x720x24" ros2 run drones_stabilization Stabilization $CAMERA_TOPIC_NAME_LEFT $CAMERA_TOPIC_NAME_RIGHT $VOCABLUARY $CAMERA_CALIBRATION
+        break
+    else
+        echo "Camera topics not ready, waiting..."
+        sleep 2
+    fi
+done
+```
+
+**Сделать исполняемым:**
+
+```bash
+chmod +x /home/drones/start_slam.sh
+```
+
+---
+
+## 3️⃣ Скрипт для запуска всех сервисов через tmux
+
+**Файл:** `/home/drones/start_all_tmux.sh`
+
+```bash
+nano /home/drones/start_all_tmux.sh
+```
+
+**Содержимое:**
+
+```bash
+#!/bin/bash
+SESSION="slam_session"
+
+if tmux has-session -t $SESSION 2>/dev/null; then
+    tmux kill-session -t $SESSION
+fi
+
+tmux new-session -d -s $SESSION
+
+tmux send-keys -t $SESSION "bash /home/drones/start_mavros.sh" C-m
+
+tmux split-window -v -t $SESSION
+tmux send-keys -t $SESSION "bash /home/drones/start_left_camera.sh" C-m
+
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION "bash /home/drones/start_right_camera.sh" C-m
+
+tmux select-pane -t 0
+tmux split-window -h -t $SESSION
+tmux send-keys -t $SESSION "bash /home/drones/start_slam.sh" C-m
+
+exit 0
+```
+
+**Сделать исполняемым:**
+
+```bash
+chmod +x /home/drones/start_all_tmux.sh
+```
+
+---
+
+
+--------------------------------------------------------------------------------------------------------
+Помогло
+--------------------------------------------------------------------------------------------------------
+sudo apt install xvfb
+
+nano ./.bashrc 
+# delete line: chmod -R 777
+--------------------------------------------------------------------------------------------------------
+--------------------------------------------------------------------------------------------------------
+
+
+После этого перезайти в сессию или перезагрузить Raspberry Pi.
+
+Тогда chmod 666 /dev/ttyACM0 и доступ к /dev/video* можно делать без sudo.
+
+После этого можно убрать sudo из скриптов.
+
+
+## 4️⃣ Запуск всей системы
+
+```bash
+/home/drones/start_all_tmux.sh
+```
+
+* tmux создаст 4 панели:
+
+  1. MAVROS
+  2. Левая камера
+  3. Правая камера
+  4. SLAM
+
+* Скрипты будут **ждать появления устройств**, не падая, и выводить информацию о состоянии в реальном времени.
+
+---
+
+sudo nano /etc/systemd/system/start_all_tmux.service
+```
+[Unit]
+Description=Autostart slam_session via start_all_tmux.sh
+After=network-online.target
+Wants=network-online.target
+RequiresMountsFor=/home
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+KillMode=process
+User=drones
+WorkingDirectory=/home/drones
+Environment=TERM=xterm-256color
+Environment=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+ExecStart=/bin/bash /home/drones/start_all_tmux.sh
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Execute commands:
+
+sudo systemctl daemon-reload
+sudo systemctl enable start_all_tmux.service

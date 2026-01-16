@@ -96,9 +96,9 @@ private:
         float roll_cam = 0.0;           // Camera rotation around X (rad)
         float pitch_cam = 0.0;          // Camera rotation around Y (rad)
         float yaw_cam = -4.7123889f;    // Camera rotation around Z (rad)
-        float scaleX = 8;
-        float scaleY = 8;
-        float scaleZ = 8;
+        float scaleX = 0.33;
+        float scaleY = 0.33;
+        float scaleZ = 0.33;
         
         // 1. Scale coordinates to represent real world.
         Eigen::Vector3f position_orig = pose.translation();
